@@ -4,12 +4,35 @@
   const chance = (p) => Math.random() < p;
 
   // Canonical ports and goods (as commonly documented) [Wikipedia]
-  const PORTS = ["Hong Kong", "Shanghai", "Saigon", "Manila", "Singapore", "Nagasaki"];
+  const PORTS = ["Hong Kong", "Nagasaki", "Shanghai", "Saigon", "Manila", "Singapore", "Batavia",];
+  const PORT_COORDS = {
+    [PORTS[0]]: [22.300, 114.167],
+    [PORTS[1]]: [32.750, 129.877],
+    [PORTS[2]]: [31.230, 121.473],
+    [PORTS[3]]: [10.775, 106.700],   // Ho Chi Minh City area (historic Saigon)
+    [PORTS[4]]: [14.599, 120.984],
+    [PORTS[5]]: [1.290, 103.851],
+    [PORTS[6]]: [-6.175, 106.827],  // Jakarta
+  };
+  const PORT_FEES = {
+    [PORTS[0]]: 0.85, // Established as a free port to counter restrictive Chinese trade.
+    [PORTS[1]]: 1.30, // Under Tokugawa/early Meiji, trade was extremely limited and controlled.
+    [PORTS[2]]: 1.10, // Major international hub but more expensive than crown colony free ports.
+    [PORTS[3]]: 1.50, // French colonial port, focused on French economic benefit.
+    [PORTS[4]]: 1.70, // Spanish colonial port, known for bureaucracy and less efficient than British ports.
+    [PORTS[5]]: 0.80, // The quintessential free port, designed for maximum trade flow.
+    [PORTS[6]]: 2.00, // Dutch hub, highly regulated with monopolies (Dutch Cultivation System).
+  }
   const GOODS = [
-    { key:"opium",   name:"Opium",   base:1000, vol:1, icon:"⚗️" },
-    { key:"silk",    name:"Silk",    base: 250, vol:1, icon:"🧵" },
-    { key:"arms",    name:"Arms",    base: 150, vol:1, icon:"🗡️" },
-    { key:"general", name:"General", base:  30, vol:1, icon:"📦" },
+    { key:"opium",      name:"Opium",   base:1000, vol:1, icon:"⚗️" },
+    { key:"silk",       name:"Silk",    base: 450, vol:1, icon:"🧵" },
+    { key:"arms",       name:"Arms",    base: 200, vol:1, icon:"🗡️" },
+    { key:"rice",       name:"Rice",    base: 20, vol:1, icon:"🍚" },
+    { key:"tea",        name:"Tea",       base: 55, vol:1, icon:"🍃" },
+    { key:"spices",     name:"Spices",    base: 65, vol:1, icon:"🫚" },
+    { key:"porcelain",  name:"Porcelain", base: 120, vol:1, icon:"🍶" },
+    { key:"glassware",  name:"Glassware", base: 90, vol:1, icon:"🔮" },
+    { key:"general",    name:"General",   base:  30, vol:1, icon:"📦" },
   ];
 
   // Game state
@@ -25,7 +48,7 @@
     shipMaxHP: 100,
     guns: 5,
     holdCap: 100,
-    cargo: { opium:0, silk:0, arms:0, general:0 },
+    cargo: { opium:0, silk:0, arms:0, rice: 0, tea: 0, spices: 0, porcelain: 0, glassware: 0, general:0 },
     priceMap: {},      // per-good current prices
     scarcity: {},      // per-good event modifiers
     rngSeedless: true, // using Math.random
@@ -34,7 +57,12 @@
   });
 
   let S = initialState();
+  let selectedDest = selectNextPort();
 
+  function selectNextPort() {
+    const index = PORTS.indexOf(S.port);
+    return index < PORTS.length ? PORTS[index + 1] : PORTS[index - 1];
+  }
   function formatMoney(n) {
     const sign = n < 0 ? "-" : "";
     return sign + "$" + Math.abs(Math.round(n)).toLocaleString();
@@ -72,13 +100,13 @@
       // port influence: simple modifiers
       const pi = {
         "Hong Kong": 1.00, "Shanghai": 0.95, "Saigon": 1.05,
-        "Manila": 0.98, "Singapore": 1.02, "Nagasaki": 1.07
+        "Manila": 0.98, "Singapore": 1.02, "Nagasaki": 1.07, "Batavia": 1.0
       }[port] || 1.0;
 
       // Random walk around base
       const vol = { opium:0.45, silk:0.35, arms:0.30, general:0.20 }[g.key] || 0.25;
       const noise = (Math.random() * 2 - 1) * vol; // -vol..+vol
-      price = Math.max(1, Math.round(price * pi * (1 + noise)));
+      price = Math.max(1, Math.round(price * (pi[port] || 1.0) * (1 + noise)));
 
       // Scarcity/glut events
       if (!S.scarcity[g.key]) S.scarcity[g.key] = { type:"none", turns:0 };
@@ -109,8 +137,7 @@
     document.getElementById("cash").textContent = formatMoney(S.cash);
     document.getElementById("bank").textContent = formatMoney(S.bank);
     document.getElementById("debt").textContent = formatMoney(S.debt);
-    document.getElementById("protection").innerHTML = S.protection
-      ? `Yes (${S.protectionTimer} voyages)` : "No";
+    document.getElementById("protection").innerHTML = S.protection ? `Yes (${S.protectionTimer} voyages)` : "No";
     document.getElementById("hp").textContent = `${S.shipHP}/${S.shipMaxHP}`;
     document.getElementById("guns").textContent = `${S.guns}`;
     document.getElementById("hold").textContent = `${holdUsed()}/${S.holdCap}`;
@@ -122,7 +149,7 @@
     for (const p of PORTS) {
       if (p === S.port) continue;
       const opt = document.createElement("option");
-      opt.value = p; opt.textContent = p;
+      opt.value = p; opt.textContent = p; opt.selected = p === selectedDest;
       sailSel.appendChild(opt);
     }
 
@@ -150,8 +177,26 @@
       qtyCell.appendChild(qtyInput);
 
       const actionCell = document.createElement("div"); actionCell.className="flex";
+      const maxBtn = document.createElement("button"); maxBtn.textContent = "Max";
       const buyBtn = document.createElement("button"); buyBtn.textContent = "Buy";
       const sellBtn = document.createElement("button"); sellBtn.textContent = "Sell";
+      maxBtn.addEventListener("click", () => {
+        let fee = 0;
+        if (selectedDest) {
+          ({ fee } = voyageMetrics(S.port, selectedDest));
+        }
+        // Max by cash
+        const maxByCash = Math.floor((S.cash - fee) / price);
+
+        // Also respect remaining hold capacity so Buy will succeed
+        const freeHold = S.holdCap - holdUsed();
+        const maxByHold = Math.floor(freeHold / g.vol);
+
+        // If you want strictly cash-only, use: const q = Math.max(0, maxByCash);
+        const q = Math.max(0, Math.min(maxByCash, maxByHold));
+
+        qtyInput.value = q;
+      });
       buyBtn.addEventListener("click", () => {
         const q = Math.max(0, Math.floor(+qtyInput.value || 0));
         buyGood(g.key, q);
@@ -160,7 +205,7 @@
         const q = Math.max(0, Math.floor(+qtyInput.value || 0));
         sellGood(g.key, q);
       });
-      actionCell.appendChild(buyBtn); actionCell.appendChild(sellBtn);
+      actionCell.appendChild(maxBtn); actionCell.appendChild(buyBtn); actionCell.appendChild(sellBtn);
 
       row.appendChild(nameCell);
       row.appendChild(priceCell);
@@ -173,12 +218,37 @@
     // Event area refresh (contextual tips)
     const eventArea = document.getElementById("eventArea");
     eventArea.innerHTML = "";
-    const tip = document.createElement("div");
-    tip.className = "muted";
-    tip.textContent = (S.port === "Hong Kong")
-      ? "You can access the bank in Hong Kong. Consider depositing surplus cash to reduce theft risk."
-      : "Sail safely. Paying protection reduces pirate encounters for a few voyages.";
-    eventArea.appendChild(tip);
+
+    function updateVoyageInfoPanel() {
+      eventArea.innerHTML = "";
+      const tip = document.createElement("div");
+      tip.className = "muted";
+      tip.textContent = (S.port === "Hong Kong")
+        ? "You can access the bank in Hong Kong. Consider depositing surplus cash to reduce theft risk."
+        : "Sail safely. Paying protection reduces pirate encounters for a few voyages.";
+      eventArea.appendChild(tip);
+
+      const dest = document.getElementById("sailTo").value;
+      selectedDest = dest;
+      if (dest) {
+        const { km, nm, fee } = voyageMetrics(S.port, dest);
+        const pChance = computePirateChance();
+        const panel = document.createElement("div");
+        panel.className = "panel";
+        panel.style.padding = "8px";
+        panel.innerHTML = [
+          `<strong>Voyage estimates to ${dest}:</strong>`,
+          `- Distance: ~${nm.toLocaleString()} nm (${km.toLocaleString()} km)`,
+          `- Sailing fee: ${formatMoney(fee)}`,
+          `- Pirate encounter chance: ${(pChance * 100).toFixed(1)}%`,
+        ].join("<br/>");
+        eventArea.appendChild(panel);
+      }
+    }
+
+    // Update estimates now and whenever destination changes
+    document.getElementById("sailTo").addEventListener("change", updateVoyageInfoPanel);
+    updateVoyageInfoPanel();
   }
 
   function newGame() {
@@ -250,6 +320,58 @@
     refreshUI();
   }
 
+  // Distance helpers (Haversine)
+  function toRad(deg) { return deg * Math.PI / 180; }
+  function haversineKm([lat1, lon1], [lat2, lon2]) {
+    const R = 6371; // km
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat/2)**2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+              Math.sin(dLon/2)**2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+  function distanceKm(fromPort, toPort) {
+    const a = PORT_COORDS[fromPort], b = PORT_COORDS[toPort];
+    if (!a || !b) return 0;
+    return haversineKm(a, b);
+  }
+
+  // Voyage metrics: km, nautical miles, and fee (deterministic)
+  function voyageMetrics(fromPort, toPort) {
+    const km = Math.round(distanceKm(fromPort, toPort));
+    const nm = Math.round(km * 0.5399568); // 1 km ≈ 0.5399568 nm
+    // Tweakable fee model: modest base + rate per km
+    const baseFee = 20 * PORT_FEES[toPort];          // flat cost
+    const ratePerKm = 0.1;      // cost per km
+    const fee = baseFee + Math.round(km * ratePerKm);
+    return { km, nm, fee };
+  }
+
+  // Wear-and-tear based on voyage length with some randomness
+  function applyWearAndTear(km) {
+    // 1 HP every ~600 km, plus a small random factor 0..3
+    const baseWear = Math.floor(km / 600);
+    const randWear = rnd(0, 3);
+    const wear = Math.max(0, baseWear + randWear);
+    if (wear > 0) {
+      S.shipHP = Math.max(0, S.shipHP - wear);
+      log(`Voyage wear-and-tear: hull loses ${wear} HP.`, "warn");
+      if (S.shipHP <= 0) {
+        gameOver("Your ship fell apart upon arrival due to cumulative damage.");
+        return true; // game over
+      }
+    }
+    return false;
+  }
+
+  // Current pirate-chance logic exposed as a function (for UI and checks)
+  function computePirateChance() {
+    const basePirateChance = 0.28;
+    return S.protection ? basePirateChance * 0.33 : basePirateChance;
+  }
+
   // Protection and repairs
   function payProtection() {
     const fee = 500 + Math.max(0, Math.floor(S.turn * 10)); // scales modestly
@@ -283,8 +405,23 @@
   function sailTo(dest) {
     if (S.gameOver) return;
     if (!PORTS.includes(dest) || dest === S.port) return;
+
+    // Compute voyage metrics up-front
+    const { km, nm, fee } = voyageMetrics(S.port, dest);
+
+    // Require cash for sailing fee
+    if (S.cash < fee) {
+      log(`You need ${formatMoney(fee)} to cover sailing costs to ${dest}.`, "bad");
+      return;
+    }
+
+    // Advance the voyage (turn) and apply interest
     S.turn += 1;
     applyInterest();
+
+    // Deduct sailing fee at departure
+    S.cash -= fee;
+    log(`Paid ${formatMoney(fee)} in sailing costs to ${dest} (${nm} nm).`, "muted");
 
     // Protection decay
     if (S.protection) {
@@ -295,9 +432,9 @@
       }
     }
 
-    // Encounter check
-    const basePirateChance = 0.28; // tweakable
-    const encounter = chance(S.protection ? basePirateChance * 0.33 : basePirateChance);
+    // Encounter check — same logic as before
+    const pChance = computePirateChance();
+    const encounter = chance(pChance);
 
     if (encounter) {
       pirateEncounter(dest);
@@ -307,6 +444,11 @@
     }
 
     S.port = dest;
+    selectedDest = selectNextPort()
+
+    // Wear-and-tear on arrival
+    if (applyWearAndTear(km)) return; // may end the game
+
     setPricesForPort(dest);
     refreshUI();
   }

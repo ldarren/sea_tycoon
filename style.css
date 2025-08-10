@@ -28,7 +28,7 @@ button, select, input[type="number"] {
 button:hover { border-color: var(--accent); cursor: pointer; }
 button.primary { background: #0f2738; border-color: #1f516b; }
 button.danger { background: #2a1010; border-color: #5f2424; }
-main { display: grid; grid-template-columns: 320px 1fr; gap: 12px; padding: 12px; }
+main { display: grid; grid-template-columns: 1fr 320px; gap: 12px; padding: 12px; }
 @media (max-width: 920px) { main { grid-template-columns: 1fr; } }
 .panel {
   background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px;
