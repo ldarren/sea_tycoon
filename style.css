@@ -1,0 +1,100 @@
+:root {
+  --bg: #0b0f14;
+  --panel: #121821;
+  --accent: #51c6ff;
+  --ok: #54d38a;
+  --warn: #ffcc66;
+  --bad: #ff6b6b;
+  --muted: #9fb3c8;
+  --text: #e6edf3;
+  --border: #243243;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  background: var(--bg); color: var(--text); line-height: 1.4;
+}
+header {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  background: #0f151d;
+}
+header h1 { font-size: 18px; margin: 0; color: var(--accent); }
+header .actions { margin-left: auto; display: flex; gap: 8px; }
+button, select, input[type="number"] {
+  background: #0f151d; color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 10px; font-size: 14px;
+}
+button:hover { border-color: var(--accent); cursor: pointer; }
+button.primary { background: #0f2738; border-color: #1f516b; }
+button.danger { background: #2a1010; border-color: #5f2424; }
+main { display: grid; grid-template-columns: 320px 1fr; gap: 12px; padding: 12px; }
+@media (max-width: 920px) { main { grid-template-columns: 1fr; } }
+.panel {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+}
+h2 { font-size: 16px; margin: 0 0 6px 0; color: var(--muted); }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 13px; }
+.stat-grid div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.muted { color: var(--muted); }
+.ok { color: var(--ok); }
+.warn { color: var(--warn); }
+.bad { color: var(--bad); }
+/* Let grid items in the main CSS grid shrink instead of forcing overflow */
+main > section.panel { min-width: 0; }
+
+/* Prevent child rows/controls from forcing overflow in the left panel */
+.stack { min-width: 0; overflow-x: auto; } /* overflow-x is a safety net */
+.stack > * { min-width: 0; }
+
+/* Flex rows in Harbor Actions: let them wrap and shrink */
+.flex { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.flex > * { min-width: 0; }
+
+ /* Make the two sub-panels in Harbor Actions shrink instead of overflowing */
+ .right-actions {
+   display: grid;
+   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+.right-actions .panel { min-width: 0; }
+
+/* Ensure controls don’t exceed their container width */
+select,
+input[type="number"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* The container is just a scrollable block */
+#goods { display: block; overflow-x: auto; }
+
+/* Each data row (and the header row) is the grid with 5 columns */
+.row.goods {
+  display: grid;
+  grid-template-columns:
+    minmax(120px, 1.3fr)
+    minmax(90px, 1fr)
+    minmax(80px, 1fr)
+    minmax(110px, 1fr)
+    minmax(160px, 1.2fr);
+  gap: 6px;
+  align-items: center;
+}
+
+/* Allow cells to shrink so the row can fit or scroll instead of blowing out */
+.row.goods > * { min-width: 0; }
+.goods.header { font-weight: bold; color: var(--muted); }
+.row { padding: 6px 0; border-bottom: 1px dashed #1b2430; }
+.row:last-child { border-bottom: none; }
+.flex { display: flex; gap: 8px; align-items: center; }
+.stack { display: grid; gap: 8px; }
+.log { height: 180px; overflow: auto; background: #0f151d; padding: 8px; border-radius: 6px; font-size: 13px; }
+.log p { margin: 4px 0; }
+.footer { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.kbd { background:#0e131a; border:1px solid #273242; border-radius:4px; padding:0 4px; }
+.separator { height: 1px; background: var(--border); margin: 8px 0; }
+.right-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.center { text-align: center; }

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sea Tycoon</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Sea Tycoon — 🌊 Rule the Waves, Command the Trade!</h1>
+    <div class="muted">Clean-room reimplementation for the browser</div>
+    <div class="actions">
+      <button id="saveBtn" title="Save to LocalStorage">Save</button>
+      <button id="loadBtn" title="Load from LocalStorage">Load</button>
+      <button id="resetBtn" class="danger" title="Reset game">New Game</button>
+      <button id="helpBtn">Help</button>
+    </div>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Captain’s Ledger</h2>
+      <div class="stat-grid">
+        <div>Port</div><div id="port"></div>
+        <div>Voyage</div><div id="turn"></div>
+        <div>Cash</div><div id="cash"></div>
+        <div>Bank (HK)</div><div id="bank"></div>
+        <div>Debt (Jia)</div><div id="debt"></div>
+        <div>Protection</div><div id="protection"></div>
+        <div>Ship HP</div><div id="hp"></div>
+        <div>Guns</div><div id="guns"></div>
+        <div>Hold</div><div id="hold"></div>
+        <div>Net Worth</div><div id="networth"></div>
+      </div>
+
+      <div class="separator"></div>
+
+      <h2>Trade Goods</h2>
+      <div id="goods">
+        <div class="row goods header">
+          <div>Good</div>
+          <div>Price</div>
+          <div>In Hold</div>
+          <div>Qty</div>
+          <div>Actions</div>
+        </div>
+        <!-- rows injected -->
+      </div>
+
+      <div class="separator"></div>
+
+      <h2>Harbor Actions</h2>
+      <div class="stack">
+        <div class="flex">
+          <label for="sailTo">Sail to</label>
+          <select id="sailTo"></select>
+          <button id="sailBtn" class="primary">Sail</button>
+        </div>
+        <div class="right-actions">
+          <div class="panel" style="padding:8px;">
+            <div class="flex">
+              <label>Bank:</label>
+              <input id="bankAmt" type="number" min="0" step="1" placeholder="Amount" />
+            </div>
+            <div class="flex">
+              <button id="depositBtn">Deposit</button>
+              <button id="withdrawBtn">Withdraw</button>
+            </div>
+            <div class="muted">Bank is only accessible in Hong Kong.</div>
+          </div>
+          <div class="panel" style="padding:8px;">
+            <div class="flex">
+              <label>Debt:</label>
+              <input id="debtAmt" type="number" min="0" step="1" placeholder="Amount" />
+            </div>
+            <div class="flex">
+              <button id="borrowBtn">Borrow</button>
+              <button id="repayBtn">Repay</button>
+            </div>
+            <div class="muted">Borrow from moneylender “Jia” at substantial interest.</div>
+          </div>
+        </div>
+        <div class="flex">
+          <button id="payProtectionBtn">Pay Zheng for protection</button>
+          <button id="repairBtn">Repair Ship</button>
+          <button id="retireBtn">Retire</button>
+        </div>
+      </div>
+
+      <div class="separator"></div>
+      <div class="footer">
+        Tip: Use the keyboard—Tab through fields; Enter to confirm, Esc to cancel dialogs. Prices change each voyage.
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Harbor Office</h2>
+      <div id="eventArea" class="stack"></div>
+      <div class="separator"></div>
+      <h2>Captain’s Log</h2>
+      <div id="log" class="log" aria-live="polite"></div>
+    </section>
+  </main>
+
+<script src="main.js"></script>
+</body>
+</html>
+
